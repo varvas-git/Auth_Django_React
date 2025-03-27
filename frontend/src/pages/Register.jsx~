@@ -1,0 +1,90 @@
+import React, { useState } from 'react'
+import axios from 'axios'
+
+export default function Register() {
+
+    const initialFormState = {
+        username: '',
+        email: '',
+        password1: '',
+        password2: ''
+    };
+    const [formData, setFormData] = useState(initialFormState);
+    const [isLoading, setIsLoading] = useState(false)
+    const [errorMessage, setErrorMessage] = useState("");
+    const [successMessage, setSuccessMessage] = useState("");
+
+    const handleInputChange = (e) => {
+        setFormData({
+            ...formData,
+            [e.target.name]: e.target.value
+        })
+    }
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+        if (isLoading) {
+            return
+        }
+
+        // Проверка совпадения паролей
+        if (formData.password1 !== formData.password2) {
+            alert("Пароли не совпадают");
+            return;
+        }
+
+        // Проверка заполнения полей
+        if (!formData.username || !formData.email || !formData.password1) {
+            alert("Пожалуйста, заполните все поля");
+            return;
+        }
+        setIsLoading(true)
+        try {
+            setErrorMessage(""); // Сброс предыдущих ошибок
+            const response = await axios.post('http://127.0.0.1:8000/api/register/', formData);
+            setSuccessMessage("Регистрация успешна!");
+            setTimeout(() => {
+                setSuccessMessage("");}, 5000);
+            setFormData(initialFormState);
+        catch (error) {
+    console.error("Ошибка при регистрации:", error);
+
+    // Сначала устанавливаем общее сообщение об ошибке
+    setErrorMessage(error.response?.data?.message || "Произошла ошибка при регистрации");
+
+    // Затем проверяем, есть ли детальные сообщения об ошибках по полям
+    if (error.response && error.response.data) {
+        Object.keys(error.response.data).forEach(field => {
+            const errorMessage = error.response.data[field];
+            if (errorMessage && errorMessage.length > 0) {
+                setErrorMessage(errorMessage[0]);
+            }
+        });
+        } finally {
+            setIsLoading(false);
+}
+    }
+    return (
+        <div>
+                <h2>Register</h2>
+                {errorMessage && <div className="error-message">{errorMessage}</div>}
+                {successMessage && <div className="success-message">{successMessage}</div>}
+                <form>
+                    <label>Username</label>
+                    <input type="text" name="username" value={formData.username}
+                    onChange={handleInputChange}></input>
+                    <label>Email</label>
+                    <input type="email" name="email" value={formData.email}
+                    onChange={handleInputChange}></input>
+                    <label>Password</label>
+                    <input type="password" name="password1" value={formData.password1}
+                    onChange={handleInputChange}></input>
+                    <label>Confirm Password</label>
+                    <input type="password" name="password2" value={formData.password2}
+                    onChange={handleInputChange}></input>
+                    <button type="submit" disabled={isLoading} onClick={handleSubmit}>
+                        {isLoading ? "Загрузка..." : "Регистрация"}</button>
+
+                </form>
+        </div>
+    )
+}
